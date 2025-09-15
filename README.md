@@ -22,12 +22,12 @@ The project documentation is also moving quite swiftly with the design section b
 
 ## Features
 
-> 📆 Add, edit, and delete movies
-> 📈 Track which seats have been taken
-> 📊 View statistics and reports
-> 💾 Data saved locally in a DB
-> 🔁 Reset movies after deleting them or clearing reservations
-> 🧩 Well-based structure
+- 📆 Add, edit, and delete movies
+- 📈 Track which seats have been taken
+- 📊 View statistics and reports
+- 💾 Data saved locally in a DB
+- 🔁 Reset movies after deleting them or clearing reservations
+- 🧩 Well-based structure
 
 ## Installation
 

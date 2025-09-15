@@ -32,6 +32,7 @@ The project documentation is also moving quite swiftly with the design section b
 ## Installation
 
 git clone [https://github.com/neb1n/NEA.git](https://github.com/neb1n/NEA.git)
+
 cd NEA
 
 ## Contributing

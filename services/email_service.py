@@ -2,14 +2,20 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
+import os
+from dotenv import load_dotenv
 
 class EmailService:
     def __init__(self):
         #!SMTP server configuration
+
+        load_dotenv()
+        password = os.environ.get("APP_PASSWORD")
+        
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
-        self.sender_email = "theater@example.com"
-        self.sender_password = "your_app_password"
+        self.sender_email = "sanjeetrashad@gmail.com"
+        self.sender_password = APP_PASSWORD
     
     def send_confirmation_email(self, recipient_email: str, reservation_details: dict) -> bool:
         try:
@@ -42,12 +48,12 @@ class EmailService:
             
             message.attach(MIMEText(body, "plain"))
             
-            #!Need to add information for this
-            #server = smtplib.SMTP(self.smtp_server, self.smtp_port)
-            #server.starttls()
-            #server.login(self.sender_email, self.sender_password)
-            #server.send_message(message)
-            #server.quit()
+            #!Information
+            server = smtplib.SMTP(self.smtp_server, self.smtp_port)
+            server.starttls()
+            server.login(self.sender_email, self.sender_password)
+            server.send_message(message)
+            server.quit()
             
             print(f"Email sent to {recipient_email}")
             return True

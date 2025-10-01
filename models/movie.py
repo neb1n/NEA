@@ -7,7 +7,8 @@ class Movie:
     id: Optional[int] = None
     title: str = ""
     genre: str = ""
-    duration: int = 0  # in minutes
+    description: str = ""
+    duration: int = 0  #!Changed from hours to minutes
     showtimes: List[str] = None
     screen: int = 1
     

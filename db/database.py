@@ -48,7 +48,7 @@ class Database:
 
     #!Reservation CRUD operations
     def add_reservation(self, customer_name: str, customer_email: str, customer_phone: str,
-                       movie_title: str, showtime: str, screen: int, seat_numbers: str, total_price: float, date: str):
+                       movie_title: str, showtime: str, screen: int, seat_numbers: str, total_price: float, date: str): #! Long ahh parse
         with self.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute("""

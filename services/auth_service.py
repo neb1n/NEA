@@ -5,7 +5,7 @@ class AuthService:
         self.login_file = login_file
         self.current_user: Optional[Dict[str, Any]] = None
 
-    def login(self, username: str, password: str) -> bool:
+    def login(self, username: str, password: str) -> bool: #!Worth it to make this so much more complicated than it actually needs to be.
         try:
             with open(self.login_file, "r") as f:
                 for line in f:

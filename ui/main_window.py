@@ -10,60 +10,48 @@ class MainWindow:
         self.root.title("Movie Theater Reservation System")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 700)
-        
+        self.root.configure(bg="#f5f6fa")  # Light background
+
         self.current_interface = None
         self.auth_service = None
-        
+
         self.setup_ui()
         self.show_user_interface()
-    
+
     def setup_ui(self):
         # Main container
-        self.main_container = ttk.Frame(self.root)
+        self.main_container = ttk.Frame(self.root, style="Main.TFrame")
         self.main_container.pack(fill=tk.BOTH, expand=True)
-        
-        # Menu bar
-        self.menubar = tk.Menu(self.root)
-        self.root.config(menu=self.menubar)
-        
-        # Interface menu
-        interface_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Interface", menu=interface_menu)
-        interface_menu.add_command(label="User Interface", command=self.show_user_interface)
-        interface_menu.add_command(label="Admin Login", command=self.show_admin_login)
-        interface_menu.add_separator()
-        interface_menu.add_command(label="Exit", command=self.root.quit)
-        
-        # Help menu
-        help_menu = tk.Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Help", menu=help_menu)
-        help_menu.add_command(label="About", command=self.show_about)
-    
+
+        # Remove menu bar for a cleaner look
+        self.root.config(menu=tk.Menu(self.root))  # Empty menu
+
     def clear_container(self):
         for widget in self.main_container.winfo_children():
             widget.destroy()
-    
+
     def show_user_interface(self):
         self.clear_container()
-        self.current_interface = UserInterface(self.main_container)
+        self.current_interface = UserInterface(self.main_container, self.show_admin_login)
         self.root.title("Movie Theater Reservation System - User Interface")
-    
+
     def show_admin_login(self):
         LoginWindow(self.root, self.on_admin_login_success)
-    
+
     def on_admin_login_success(self, auth_service):
         self.auth_service = auth_service
         self.show_admin_interface()
-    
+
     def show_admin_interface(self):
         if not self.auth_service or not self.auth_service.is_authenticated():
             self.show_admin_login()
             return
-        
+
         self.clear_container()
-        self.current_interface = AdminInterface(self.main_container, self.auth_service)
+        self.current_interface = AdminInterface(self.main_container, self.auth_service, logout_callback=self.logout_admin)
         self.root.title("Movie Theater Reservation System - Admin Panel")
-    
-    def show_about(self):
-        about_text = ""
-        
+
+    def logout_admin(self):
+        if self.auth_service:
+            self.auth_service.logout()
+        self.show_user_interface()

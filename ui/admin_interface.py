@@ -5,9 +5,10 @@ from services.reservation_service import ReservationService
 import csv
 
 class AdminInterface:
-    def __init__(self, parent, auth_service):
+    def __init__(self, parent, auth_service, logout_callback=None):
         self.parent = parent
         self.auth_service = auth_service
+        self.logout_callback = logout_callback
         self.movie_service = MovieService()
         self.reservation_service = ReservationService()
         
@@ -29,7 +30,13 @@ class AdminInterface:
         user_info = self.auth_service.get_current_user()
         user_label = ttk.Label(header_frame, text=f"Welcome, {user_info['username']}")
         user_label.pack(side=tk.RIGHT)
-        
+
+        # --- Add Logout Button ---
+        if self.logout_callback:
+            logout_btn = ttk.Button(header_frame, text="Logout", command=self.logout_callback)
+            logout_btn.pack(side=tk.RIGHT, padx=(0, 10))
+        # --- End Logout Button ---
+
         # Create notebook for tabs
         self.notebook = ttk.Notebook(self.main_frame)
         self.notebook.pack(fill=tk.BOTH, expand=True)

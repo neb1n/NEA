@@ -13,7 +13,7 @@ class Reservation:
     showtime: str = ""
     screen: int = 1
     seat_numbers: List[str] = None
-    date: str = ""  # <-- Add this line
+    date: str = ""  
     timestamp: Optional[datetime] = None
     total_price: float = 0.0
     

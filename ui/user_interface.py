@@ -95,7 +95,7 @@ class UserInterface:
         self.phone_entry.grid(row=1, column=1, pady=5)
 
         # Date
-        ttk.Label(form_frame, text="Date (YYYY-MM-DD):").grid(row=2, column=0, sticky="w", padx=(0, 5), pady=5)
+        ttk.Label(form_frame, text="Date (DD-MM-YYYY):").grid(row=2, column=0, sticky="w", padx=(0, 5), pady=5)
         self.date_entry = ttk.Entry(form_frame, width=25)
         self.date_entry.grid(row=2, column=1, padx=(0, 20), pady=5)
 

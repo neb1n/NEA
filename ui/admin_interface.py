@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox, filedialog
 from services.movie_service import MovieService
 from services.reservation_service import ReservationService
 import csv
+from ui.theme import Colors
 
 class AdminInterface:
     def __init__(self, parent, auth_service, logout_callback=None):
@@ -16,8 +17,10 @@ class AdminInterface:
         self.load_data()
     
     def setup_ui(self):
+        style = ttk.Style()
+        style.configure("Admin.TFrame", background=Colors.BACKGROUND)
         # Main frame
-        self.main_frame = ttk.Frame(self.parent)
+        self.main_frame = ttk.Frame(self.parent, style="Admin.TFrame")
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         
         # Title and user info
@@ -152,6 +155,7 @@ class AdminInterface:
         button_frame.pack(pady=10)
 
         ttk.Button(button_frame, text="Refresh", command=self.load_reservations).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="Process Refund", command=self.process_refund).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(button_frame, text="Remove All Bookings", command=self.remove_all_bookings).pack(side=tk.LEFT)
 
     def remove_all_bookings(self):
@@ -160,6 +164,36 @@ class AdminInterface:
             self.reservation_service.db.delete_all_reservations()
             self.load_reservations()
             messagebox.showinfo("Success", "All bookings have been removed.")
+
+    def process_refund(self):
+        selection = self.reservations_tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a reservation to refund.")
+            return
+
+        item = self.reservations_tree.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            messagebox.showerror("Error", "Could not determine selected reservation.")
+            return
+
+        try:
+            reservation_id = int(values[0])
+        except Exception:
+            messagebox.showerror("Error", "Invalid reservation ID selected.")
+            return
+
+        confirm = messagebox.askyesno("Confirm Refund", f"Are you sure you want to process a refund and delete reservation ID {reservation_id}? This cannot be undone.")
+        if not confirm:
+            return
+
+        success = self.reservation_service.delete_reservation(reservation_id)
+        if success:
+            messagebox.showinfo("Success", "Reservation refunded and deleted.")
+            self.load_reservations()
+            self.refresh_stats()
+        else:
+            messagebox.showerror("Error", "Failed to delete reservation. It may have already been removed.")
 
     def load_data(self):
         self.load_movies()
@@ -211,138 +245,4 @@ class AdminInterface:
         self.showtimes_entry.insert(0, values[4])
         
         self.screen_var.set(values[5])
-    
-    def add_movie(self):
-        title = self.title_entry.get().strip()
-        genre = self.genre_entry.get().strip()
-        duration = self.duration_entry.get().strip()
-        showtimes = self.showtimes_entry.get().strip()
-        screen = self.screen_var.get()
-        
-        if not all([title, genre, duration, showtimes, screen]):
-            messagebox.showerror("Error", "Please fill in all fields")
-            return
-        
-        try:
-            duration = int(duration)
-            screen = int(screen)
-            showtimes_list = [time.strip() for time in showtimes.split(',')]
-            
-            self.movie_service.add_movie(title, genre, duration, showtimes_list, screen)
-            self.load_movies()
-            self.clear_movie_form()
-            messagebox.showinfo("Success", "Movie added successfully")
-            
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid duration and screen numbers")
-    
-    def update_movie(self):
-        selection = self.movie_tree.selection()
-        if not selection:
-            messagebox.showerror("Error", "Please select a movie to update")
-            return
-        
-        item = self.movie_tree.item(selection[0])
-        movie_id = item['values'][0]
-        
-        title = self.title_entry.get().strip()
-        genre = self.genre_entry.get().strip()
-        duration = self.duration_entry.get().strip()
-        showtimes = self.showtimes_entry.get().strip()
-        screen = self.screen_var.get()
-        
-        if not all([title, genre, duration, showtimes, screen]):
-            messagebox.showerror("Error", "Please fill in all fields")
-            return
-        
-        try:
-            duration = int(duration)
-            screen = int(screen)
-            showtimes_list = [time.strip() for time in showtimes.split(',')]
-            
-            self.movie_service.update_movie(movie_id, title, genre, duration, showtimes_list, screen)
-            self.load_movies()
-            self.clear_movie_form()
-            messagebox.showinfo("Success", "Movie updated successfully")
-            
-        except ValueError:
-            messagebox.showerror("Error", "Please enter valid duration and screen numbers")
-    
-    def delete_movie(self):
-        selection = self.movie_tree.selection()
-        if not selection:
-            messagebox.showerror("Error", "Please select a movie to delete")
-            return
-        
-        item = self.movie_tree.item(selection[0])
-        movie_id = item['values'][0]
-        movie_title = item['values'][1]
-        
-        if messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{movie_title}'?"):
-            self.movie_service.delete_movie(movie_id)
-            self.load_movies()
-            self.clear_movie_form()
-            messagebox.showinfo("Success", "Movie deleted successfully")
-    
-    def clear_movie_form(self):
-        self.title_entry.delete(0, tk.END)
-        self.genre_entry.delete(0, tk.END)
-        self.duration_entry.delete(0, tk.END)
-        self.showtimes_entry.delete(0, tk.END)
-        self.screen_var.set('')
-    
-    def refresh_stats(self):
-        stats = self.reservation_service.get_reservation_stats()
-        
-        self.stats_text.delete(1.0, tk.END)
-        
-        report = "NUTWARK REPORT\n"
-        report += "=" * 50 + "\n\n"
-        
-        report += f"Total Reservations: {stats['total_reservations']}\n"
-        report += f"Total Revenue: ${stats['total_revenue']:.2f}\n\n"
-        
-        report += "Screen Occupancy:\n"
-        report += "-" * 20 + "\n"
-        for screen, count in stats['screen_stats'].items():
-            report += f"Screen {screen}: {count} reservations\n"
-        
-        report += "\nDetailed Reservations:\n"
-        report += "-" * 30 + "\n"
-        
-        reservations = self.reservation_service.get_all_reservations()
-        for reservation in reservations:
-            report += f"ID: {reservation['id']} | "
-            report += f"{reservation['customer_name']} | "
-            report += f"{reservation['movie_title']} | "
-            report += f"{reservation['showtime']} | "
-            report += f"Screen {reservation['screen']} | "
-            report += f"Seats: {reservation['seat_numbers']} | "
-            report += f"${reservation['total_price']:.2f}\n"
-        
-        self.stats_text.insert(1.0, report)
-    
-    def export_to_csv(self):
-        filename = filedialog.asksaveasfilename(
-            defaultextension=".csv",
-            filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
-        )
-        
-        if filename:
-            try:
-                reservations = self.reservation_service.get_all_reservations()
-                
-                with open(filename, 'w', newline='') as csvfile:
-                    fieldnames = ['id', 'customer_name', 'customer_email', 'customer_phone',
-                                'movie_title', 'showtime', 'screen', 'seat_numbers', 
-                                'total_price', 'timestamp']
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    
-                    writer.writeheader()
-                    for reservation in reservations:
-                        writer.writerow(reservation)
-                
-                messagebox.showinfo("Success", f"Data exported to {filename}")
-                
-            except Exception as e:
-                messagebox.showerror("Error", f"Failed to export data: {str(e)}")
+   

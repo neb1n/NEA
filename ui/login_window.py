@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 from services.auth_service import AuthService
+from ui.theme import Colors
 
 class LoginWindow:
     def __init__(self, parent, on_login_success):
@@ -11,29 +12,33 @@ class LoginWindow:
         #!Creating the window
         self.window = tk.Toplevel(parent)
         self.window.title("Admin Login")
-        self.window.geometry("300x200")
+        self.window.geometry("320x220")
         self.window.resizable(False, False)
         self.window.transient(parent)
         self.window.grab_set()
+        # soft background
+        self.window.configure(bg=Colors.BACKGROUND)
         
         self.setup_ui()
         self.center_window()
     
     def setup_ui(self):
-        main_frame = ttk.Frame(self.window, padding="20")
+        style = ttk.Style()
+        style.configure("Login.TFrame", background=Colors.BACKGROUND)
+        main_frame = ttk.Frame(self.window, padding="20", style="Login.TFrame")
         main_frame.pack(fill=tk.BOTH, expand=True)
         
         #!Title
-        title_label = ttk.Label(main_frame, text="Admin Login", font=("Arial", 16, "bold"))
+        title_label = ttk.Label(main_frame, text="Admin Login", font=("Arial", 16, "bold"), foreground=Colors.TEXT, background=Colors.BACKGROUND)
         title_label.pack(pady=(0, 20))
         
         #!Username
-        ttk.Label(main_frame, text="Username:").pack(anchor="w")
+        ttk.Label(main_frame, text="Username:", background=Colors.BACKGROUND).pack(anchor="w")
         self.username_entry = ttk.Entry(main_frame, width=25)
         self.username_entry.pack(pady=(0, 10))
         
         #!Password
-        ttk.Label(main_frame, text="Password:").pack(anchor="w")
+        ttk.Label(main_frame, text="Password:", background=Colors.BACKGROUND).pack(anchor="w")
         self.password_entry = ttk.Entry(main_frame, width=25, show="*")
         self.password_entry.pack(pady=(0, 20))
         
@@ -47,7 +52,7 @@ class LoginWindow:
         cancel_btn = ttk.Button(button_frame, text="Cancel", command=self.window.destroy)
         cancel_btn.pack(side=tk.LEFT)
         
-        #!Bind Enter key to login function (WHAT IS LAMBDA I SWEAR)
+        #!Bind Enter key to login function
         self.window.bind('<Return>', lambda e: self.login())
         
         #!Focus on username entry

@@ -3,6 +3,8 @@ from tkinter import ttk, messagebox
 from services.movie_service import MovieService
 from services.reservation_service import ReservationService
 from ui.seat_map import SeatMap
+from ui.landing_page import LandingPage
+from ui.theme import Colors
 import re
 
 class UserInterface:
@@ -16,158 +18,123 @@ class UserInterface:
         self.selected_showtime = None
         self.selected_screen = None
         self.seat_map = None
+        self.current_page = None
 
-        self.setup_styles()
         self.setup_ui()
-        self.load_movies()
-
-    def setup_styles(self):
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("Main.TFrame", background="#f5f6fa")
-        style.configure("Title.TLabel", font=("Segoe UI", 28, "bold"), background="#f5f6fa", foreground="#273c75")
-        style.configure("Section.TLabelframe", font=("Segoe UI", 14, "bold"), background="#f5f6fa", foreground="#353b48")
-        style.configure("TButton", font=("Segoe UI", 12), padding=8)
-        style.configure("TLabel", font=("Segoe UI", 12), background="#f5f6fa")
-        style.configure("TEntry", font=("Segoe UI", 12))
-        style.configure("TCombobox", font=("Segoe UI", 12))
+        self.show_landing_page()
 
     def setup_ui(self):
-        # Main frame
-        self.main_frame = ttk.Frame(self.parent, style="Main.TFrame")
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        self.main_frame = ttk.Frame(self.parent)
+        self.main_frame.pack(fill=tk.BOTH, expand=True)
 
-        # Top bar with title and admin login button
-        top_bar = ttk.Frame(self.main_frame, style="Main.TFrame")
-        top_bar.pack(fill=tk.X, pady=(0, 20))
+    def clear_page(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
 
-        title_label = ttk.Label(top_bar, text="🎬 Movie Reservation System", style="Title.TLabel")
-        title_label.pack(side=tk.LEFT, padx=(0, 20))
+    def show_landing_page(self):
+        self.clear_page()
+        self.current_page = LandingPage(
+            self.main_frame, 
+            self.show_reservation_page,
+            self.admin_login_callback
+        )
 
-        if self.admin_login_callback:
-            admin_btn = ttk.Button(top_bar, text="Admin Login", command=self.admin_login_callback, style="TButton")
-            admin_btn.pack(side=tk.RIGHT, padx=(0, 10))
-            admin_btn.bind("<Enter>", lambda e: admin_btn.config(cursor="hand2"))
-
-        # Movie selection frame
-        movie_frame = ttk.LabelFrame(self.main_frame, text="Select Movie", style="Section.TLabelframe", padding="16")
-        movie_frame.pack(fill=tk.X, pady=(0, 15))
-
-        self.movie_listbox = tk.Listbox(movie_frame, height=5, font=("Segoe UI", 12), bg="#fff", bd=0, highlightthickness=1, relief="flat")
-        self.movie_listbox.pack(fill=tk.X)
-        self.movie_listbox.bind('<<ListboxSelect>>', self.on_movie_selected)
-
-        # Showtime selection frame
-        showtime_frame = ttk.LabelFrame(self.main_frame, text="Select Showtime", style="Section.TLabelframe", padding="16")
+    def show_reservation_page(self, movie):
+        self.clear_page()
+        self.selected_movie = movie
+        self.selected_screen = movie['screen']
+        
+        # Create reservation frame with theme background
+        style = ttk.Style()
+        style.configure("Reservation.TFrame", background=Colors.BACKGROUND)
+        style.configure("Reservation.TLabelframe", background=Colors.BACKGROUND, foreground=Colors.TEXT)
+        res_frame = ttk.Frame(self.main_frame, style="Reservation.TFrame")
+        res_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=30)
+        res_frame.configure()
+        
+        # Back button (subtle style consistent with theme)
+        back_btn = tk.Button(res_frame, text="← Back to Movies", bg=Colors.CARD_BG, fg=Colors.TEXT,
+                             activebackground=Colors.ACCENT_HOVER, activeforeground=Colors.CTA_FG,
+                             relief="groove", bd=1, cursor="hand2", command=self.show_landing_page)
+        back_btn.pack(anchor="w", pady=(0, 20))
+        
+        # Title
+        title_label = tk.Label(res_frame, text=f"Reserve: {movie['title']}", 
+                               font=("Segoe UI", 20, "bold"), bg=Colors.BACKGROUND, fg=Colors.TEXT)
+        title_label.pack(anchor="w", pady=(0, 20))
+        
+        # Showtime selection
+        showtime_frame = ttk.LabelFrame(res_frame, text="Select Showtime", padding="16", style="Reservation.TLabelframe")
         showtime_frame.pack(fill=tk.X, pady=(0, 15))
 
         self.showtime_var = tk.StringVar()
-        self.showtime_combo = ttk.Combobox(showtime_frame, textvariable=self.showtime_var, state="readonly", style="TCombobox")
+        showtimes = self.selected_movie['showtimes'].split(',')
+        self.showtime_combo = ttk.Combobox(showtime_frame, textvariable=self.showtime_var, 
+                                          values=showtimes, state="readonly")
         self.showtime_combo.pack(fill=tk.X)
         self.showtime_combo.bind('<<ComboboxSelected>>', self.on_showtime_selected)
 
-        # Seat selection frame
-        seat_frame = ttk.LabelFrame(self.main_frame, text="Select Seats", style="Section.TLabelframe", padding="16")
+        # Seat selection container (will hold the seat map)
+        seat_frame = ttk.LabelFrame(res_frame, text="Select Seats", padding="16", style="Reservation.TLabelframe")
         seat_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 15))
-
+        # give seat_frame a soft bg to match theme
+        try:
+            seat_frame.configure(style="Reservation.TLabelframe")
+        except Exception:
+            pass
         self.seat_container = seat_frame
 
-        # Customer details frame
-        details_frame = ttk.LabelFrame(self.main_frame, text="Customer Details", style="Section.TLabelframe", padding="16")
+        # Customer details
+        details_frame = ttk.LabelFrame(res_frame, text="Customer Details", padding="16", style="Reservation.TLabelframe")
         details_frame.pack(fill=tk.X, pady=(0, 15))
 
-        form_frame = ttk.Frame(details_frame, style="Main.TFrame")
-        form_frame.pack(fill=tk.X)
+        # Labels/Entries — ensure readable text color & consistent spacing
+        lbl_opts = {"bg": Colors.BACKGROUND, "fg": Colors.TEXT, "font": ("Segoe UI", 10)}
+        ttk.Label(details_frame, text="Name:").grid(row=0, column=0, sticky="w", pady=5)
+        self.name_entry = ttk.Entry(details_frame, width=25)
+        self.name_entry.grid(row=0, column=1, pady=5)
 
-        # Name
-        ttk.Label(form_frame, text="Name:").grid(row=0, column=0, sticky="w", padx=(0, 5), pady=5)
-        self.name_entry = ttk.Entry(form_frame, width=25)
-        self.name_entry.grid(row=0, column=1, padx=(0, 20), pady=5)
-
-        # Email
-        ttk.Label(form_frame, text="Email:").grid(row=0, column=2, sticky="w", padx=(0, 5), pady=5)
-        self.email_entry = ttk.Entry(form_frame, width=25)
+        ttk.Label(details_frame, text="Email:").grid(row=0, column=2, sticky="w", pady=5)
+        self.email_entry = ttk.Entry(details_frame, width=25)
         self.email_entry.grid(row=0, column=3, pady=5)
 
-        # Phone
-        ttk.Label(form_frame, text="Phone:").grid(row=1, column=0, sticky="w", padx=(0, 5), pady=5)
-        self.phone_entry = ttk.Entry(form_frame, width=25)
+        ttk.Label(details_frame, text="Phone:").grid(row=1, column=0, sticky="w", pady=5)
+        self.phone_entry = ttk.Entry(details_frame, width=25)
         self.phone_entry.grid(row=1, column=1, pady=5)
 
-        # Date
-        ttk.Label(form_frame, text="Date (DD-MM-YYYY):").grid(row=2, column=0, sticky="w", padx=(0, 5), pady=5)
-        self.date_entry = ttk.Entry(form_frame, width=25)
-        self.date_entry.grid(row=2, column=1, padx=(0, 20), pady=5)
+        ttk.Label(details_frame, text="Date (DD-MM-YYYY):").grid(row=1, column=2, sticky="w", pady=5)
+        self.date_entry = ttk.Entry(details_frame, width=25)
+        self.date_entry.grid(row=1, column=3, pady=5)
 
-        # Selected seats display
-        ttk.Label(form_frame, text="Selected Seats:").grid(row=1, column=2, sticky="w", padx=(0, 5), pady=5)
-        self.selected_seats_label = ttk.Label(form_frame, text="None", foreground="#0097e6")
-        self.selected_seats_label.grid(row=1, column=3, pady=5)
-
-        # Reserve button
-        self.reserve_btn = ttk.Button(form_frame, text="Make Reservation", command=self.make_reservation, style="TButton")
-        self.reserve_btn.grid(row=2, column=2, columnspan=2, pady=(15, 0), sticky="ew")
-
-    def load_movies(self):
-        movies = self.movie_service.get_all_movies()
-        self.movie_listbox.delete(0, tk.END)
-
-        for movie in movies:
-            display_text = f"{movie['title']} ({movie['genre']}) - {movie['duration']} min - Screen {movie['screen']}"
-            self.movie_listbox.insert(tk.END, display_text)
-
-    def on_movie_selected(self, event):
-        selection = self.movie_listbox.curselection()
-        if not selection:
-            return
-
-        movie_index = selection[0]
-        movies = self.movie_service.get_all_movies()
-
-        if movie_index < len(movies):
-            self.selected_movie = movies[movie_index]
-            self.selected_screen = self.selected_movie['screen']
-
-            # Load showtimes
-            showtimes = self.selected_movie['showtimes'].split(',')
-            self.showtime_combo['values'] = showtimes
-            self.showtime_combo.set('')
-
-            # Clear seat selection
-            self.clear_seat_selection()
+        # Reserve button — styled to match theme
+        self.reserve_btn = tk.Button(details_frame, text="Complete Reservation", bg=Colors.ACCENT, fg=Colors.CTA_FG,
+                                     activebackground=Colors.ACCENT_HOVER, activeforeground=Colors.CTA_FG,
+                                     relief="flat", cursor="hand2", command=self.make_reservation)
+        self.reserve_btn.grid(row=2, column=2, columnspan=2, pady=15, sticky="ew")
 
     def on_showtime_selected(self, event):
         self.selected_showtime = self.showtime_var.get()
         self.load_seat_map()
 
     def load_seat_map(self):
-        if not self.selected_movie or not self.selected_showtime:
-            return
-
-        # Clear existing seat map
+        # Clear previous seat map
         for widget in self.seat_container.winfo_children():
             widget.destroy()
 
         # Create new seat map
-        self.seat_map = SeatMap(self.seat_container, self.on_seat_selected)
-
-        # Load reserved seats
+        self.seat_map = SeatMap(self.seat_container, lambda s: None)
+        
+        # Get reserved seats for this specific showtime/screen/movie
         reserved_seats = self.reservation_service.get_reserved_seats(
             self.selected_movie['title'], self.selected_showtime, self.selected_screen
         )
-        self.seat_map.set_reserved_seats(reserved_seats)
-
-    def on_seat_selected(self, seat_id):
-        selected_seats = self.seat_map.get_selected_seats()
-        if selected_seats:
-            self.selected_seats_label.config(text=', '.join(selected_seats))
-        else:
-            self.selected_seats_label.config(text="None")
-
-    def clear_seat_selection(self):
-        if self.seat_map:
-            self.seat_map.clear_selection()
-        self.selected_seats_label.config(text="None")
+        
+        # Set reserved seats in the seat map
+        if reserved_seats:
+            self.seat_map.set_reserved_seats(reserved_seats)
+        
+        # Force update to ensure colours are applied
+        self.seat_map.update_seat_colours()
 
     def validate_email(self, email):
         pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -178,26 +145,13 @@ class UserInterface:
         return re.match(pattern, phone) is not None
 
     def make_reservation(self):
-        # Validate inputs
         name = self.name_entry.get().strip()
         email = self.email_entry.get().strip()
         phone = self.phone_entry.get().strip()
         date = self.date_entry.get().strip()
 
-        if not name or not email or not phone:
-            messagebox.showerror("Error", "Please fill in all customer details")
-            return
-
-        if not self.validate_email(email):
-            messagebox.showerror("Error", "Please enter a valid email address")
-            return
-
-        if not self.validate_phone(phone):
-            messagebox.showerror("Error", "Please enter a valid phone number")
-            return
-
-        if not self.selected_movie or not self.selected_showtime:
-            messagebox.showerror("Error", "Please select a movie and showtime")
+        if not all([name, email, phone, self.selected_showtime, self.seat_map]):
+            messagebox.showerror("Error", "Please fill in all fields")
             return
 
         selected_seats = self.seat_map.get_selected_seats()
@@ -205,37 +159,24 @@ class UserInterface:
             messagebox.showerror("Error", "Please select at least one seat")
             return
 
-        # Calculate total price for confirmation
+        # Validate email and phone
+        if not self.validate_email(email):
+            messagebox.showerror("Error", "Please enter a valid email address")
+            return
+        
+        if not self.validate_phone(phone):
+            messagebox.showerror("Error", "Please enter a valid phone number")
+            return
+
         total_price = self.reservation_service.calculate_total_price(selected_seats)
 
-        # Confirm reservation
-        message = f"Reservation Summary:\n\n"
-        message += f"Movie: {self.selected_movie['title']}\n"
-        message += f"Showtime: {self.selected_showtime}\n"
-        message += f"Screen: {self.selected_screen}\n"
-        message += f"Seats: {', '.join(selected_seats)}\n"
-        message += f"Total Price: ${total_price:.2f}\n\n"
-        message += "Confirm reservation?"
-
-        if messagebox.askyesno("Confirm Reservation", message):
+        if messagebox.askyesno("Confirm", f"Total: ${total_price:.2f}. Proceed?"):
             success = self.reservation_service.make_reservation(
                 name, email, phone, self.selected_movie['title'],
                 self.selected_showtime, self.selected_screen, selected_seats, date
             )
             if success:
-                messagebox.showinfo("Success", "Reservation completed!")
-                self.reset_form()
+                messagebox.showinfo("Success", "Reservation complete!")
+                self.show_landing_page()
             else:
-                messagebox.showerror("Error", "Reservation failed. Please try again.")
-
-    def reset_form(self):
-        self.name_entry.delete(0, tk.END)
-        self.email_entry.delete(0, tk.END)
-        self.phone_entry.delete(0, tk.END)
-        self.movie_listbox.selection_clear(0, tk.END)
-        self.showtime_combo.set('')
-        self.selected_seats_label.config(text="None")
-        self.clear_seat_selection()
-        self.selected_movie = None
-        self.selected_showtime = None
-        self.selected_screen = None
+                messagebox.showerror("Error", "Reservation failed")

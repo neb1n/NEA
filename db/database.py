@@ -79,6 +79,20 @@ class Database:
                 reserved_seats.extend([seat.strip() for seat in seats])
             return reserved_seats
 
+    def get_reservation_by_id(self, reservation_id: int) -> Optional[Dict[str, Any]]:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM reservations WHERE id=?", (reservation_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
+    def delete_reservation_by_id(self, reservation_id: int) -> bool:
+        with self.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM reservations WHERE id=?", (reservation_id,))
+            conn.commit()
+            return cursor.rowcount > 0
+
     def delete_all_reservations(self):
         with self.get_connection() as conn:
             cursor = conn.cursor()

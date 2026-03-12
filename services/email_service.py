@@ -3,7 +3,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from typing import Optional
 import os
-from dotenv import load_dotenv
 
 class EmailService:
     def __init__(self):
@@ -11,13 +10,11 @@ class EmailService:
 
         #!Still need to fix this and set the .env file properly because I'm lowkey not working properly.
 
-        load_dotenv()
-        password = os.environ.get("APP_PASSWORD")
         
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
         self.sender_email = "sanjeetrashad@gmail.com"
-        self.sender_password = password
+        self.sender_password = "app_password"
     
     def send_confirmation_email(self, recipient_email: str, reservation_details: dict) -> bool:
         try:

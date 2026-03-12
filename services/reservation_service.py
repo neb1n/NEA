@@ -98,6 +98,23 @@ class ReservationService:
     def get_all_reservations(self) -> List[Dict[str, Any]]:
         #!Fetches all reservations from the database
         return self.db.get_reservations()
+
+    def delete_reservation(self, reservation_id: int) -> bool:
+        """Delete a reservation by ID (used for processing refunds).
+
+        Returns True if a reservation was deleted, False otherwise.
+        """
+        try:
+            # ensure reservation exists
+            reservation = self.db.get_reservation_by_id(reservation_id)
+            if not reservation:
+                return False
+
+            success = self.db.delete_reservation_by_id(reservation_id)
+            return bool(success)
+        except Exception as e:
+            print(f"Error deleting reservation: {e}")
+            return False
     
     def get_reservation_stats(self) -> Dict[str, Any]:
         #!Calculates reservation stats

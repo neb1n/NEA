@@ -3,6 +3,7 @@ from tkinter import ttk
 from ui.user_interface import UserInterface
 from ui.admin_interface import AdminInterface
 from ui.login_window import LoginWindow
+from ui.theme import Colors
 
 class MainWindow:
     def __init__(self, root):
@@ -10,7 +11,8 @@ class MainWindow:
         self.root.title("Movie Theater Reservation System")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 700)
-        self.root.configure(bg="#f5f6fa")  # Light background
+        # Soft background from theme
+        self.root.configure(bg=Colors.BACKGROUND)
 
         self.current_interface = None
         self.auth_service = None
@@ -19,7 +21,9 @@ class MainWindow:
         self.show_user_interface()
 
     def setup_ui(self):
-        # Main container
+        # Main container with styled background
+        style = ttk.Style()
+        style.configure("Main.TFrame", background=Colors.BACKGROUND)
         self.main_container = ttk.Frame(self.root, style="Main.TFrame")
         self.main_container.pack(fill=tk.BOTH, expand=True)
 

@@ -1,9 +1,10 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from ui.user_interface import UserInterface
 from ui.admin_interface import AdminInterface
 from ui.login_window import LoginWindow
 from ui.theme import Colors
+from ui.splash_screen import SplashScreen
 
 class MainWindow:
     def __init__(self, root):
@@ -43,8 +44,21 @@ class MainWindow:
         LoginWindow(self.root, self.on_admin_login_success)
 
     def on_admin_login_success(self, auth_service):
+        splash_words = [
+            "Waiting for Database...",
+            "Loading Admin Panel...",
+            "Loading Database...",
+        ]
+        SplashScreen(self.root, words=splash_words, duration=3000, on_close=lambda: self._finalize_admin_login(auth_service))
+
+    def _finalize_admin_login(self, auth_service):
         self.auth_service = auth_service
-        self.show_admin_interface()
+        try:
+            self.show_admin_interface()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to open admin interface: {e}")
+            # Fallback: return to user interface so the app remains usable
+            self.show_user_interface()
 
     def show_admin_interface(self):
         if not self.auth_service or not self.auth_service.is_authenticated():

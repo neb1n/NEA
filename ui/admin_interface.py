@@ -246,3 +246,148 @@ class AdminInterface:
         
         self.screen_var.set(values[5])
    
+    def add_movie(self):
+        title = self.title_entry.get().strip()
+        genre = self.genre_entry.get().strip()
+        duration = self.duration_entry.get().strip()
+        showtimes = self.showtimes_entry.get().strip()
+        screen = self.screen_var.get()
+
+        if not title:
+            messagebox.showerror("Error", "Title is required.")
+            return
+
+        try:
+            duration_val = int(duration)
+        except Exception:
+            messagebox.showerror("Error", "Duration must be an integer (minutes).")
+            return
+
+        try:
+            screen_val = int(screen)
+        except Exception:
+            messagebox.showerror("Error", "Please select a valid screen.")
+            return
+
+        showtimes_list = [s.strip() for s in showtimes.split(',')] if showtimes else []
+
+        try:
+            self.movie_service.add_movie(title, genre, duration_val, showtimes_list, screen_val)
+            messagebox.showinfo("Success", f"Movie '{title}' added.")
+            self.clear_movie_form()
+            self.load_movies()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to add movie: {e}")
+
+    def update_movie(self):
+        selection = self.movie_tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a movie to update.")
+            return
+
+        item = self.movie_tree.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            messagebox.showerror("Error", "Could not determine selected movie.")
+            return
+
+        try:
+            movie_id = int(values[0])
+        except Exception:
+            messagebox.showerror("Error", "Invalid movie ID selected.")
+            return
+
+        title = self.title_entry.get().strip()
+        genre = self.genre_entry.get().strip()
+        try:
+            duration_val = int(self.duration_entry.get().strip())
+        except Exception:
+            messagebox.showerror("Error", "Duration must be an integer (minutes).")
+            return
+
+        showtimes = self.showtimes_entry.get().strip()
+        showtimes_list = [s.strip() for s in showtimes.split(',')] if showtimes else []
+
+        try:
+            screen_val = int(self.screen_var.get())
+        except Exception:
+            messagebox.showerror("Error", "Please select a valid screen.")
+            return
+
+        try:
+            self.movie_service.update_movie(movie_id, title, genre, duration_val, showtimes_list, screen_val)
+            messagebox.showinfo("Success", f"Movie '{title}' updated.")
+            self.clear_movie_form()
+            self.load_movies()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to update movie: {e}")
+
+    def delete_movie(self):
+        selection = self.movie_tree.selection()
+        if not selection:
+            messagebox.showerror("Error", "Please select a movie to delete.")
+            return
+
+        item = self.movie_tree.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            messagebox.showerror("Error", "Could not determine selected movie.")
+            return
+
+        try:
+            movie_id = int(values[0])
+            movie_title = values[1]
+        except Exception:
+            messagebox.showerror("Error", "Invalid movie selection.")
+            return
+
+        confirm = messagebox.askyesno("Confirm Delete", f"Are you sure you want to delete '{movie_title}'? This will also remove related reservations.")
+        if not confirm:
+            return
+
+        try:
+            self.movie_service.delete_movie(movie_id)
+            messagebox.showinfo("Success", f"Movie '{movie_title}' deleted.")
+            self.clear_movie_form()
+            self.load_movies()
+            self.load_reservations()
+            self.refresh_stats()
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete movie: {e}")
+
+    def clear_movie_form(self):
+        self.title_entry.delete(0, tk.END)
+        self.genre_entry.delete(0, tk.END)
+        self.duration_entry.delete(0, tk.END)
+        self.showtimes_entry.delete(0, tk.END)
+        self.screen_var.set('')
+
+    def refresh_stats(self):
+        try:
+            stats = self.reservation_service.get_reservation_stats()
+            self.stats_text.delete('1.0', tk.END)
+            self.stats_text.insert(tk.END, f"Total Reservations: {stats['total_reservations']}\n")
+            self.stats_text.insert(tk.END, f"Total Revenue: ${stats['total_revenue']:.2f}\n\n")
+            self.stats_text.insert(tk.END, "Screen Occupancy:\n")
+            for screen, count in stats['screen_stats'].items():
+                self.stats_text.insert(tk.END, f"  Screen {screen}: {count} bookings\n")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to refresh stats: {e}")
+
+    def export_to_csv(self):
+        try:
+            file_path = filedialog.asksaveasfilename(defaultextension='.csv', filetypes=[('CSV files', '*.csv')])
+            if not file_path:
+                return
+
+            movies = self.movie_service.get_all_movies()
+            with open(file_path, 'w', newline='', encoding='utf-8') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow(['ID', 'Title', 'Genre', 'Duration', 'Showtimes', 'Screen'])
+                for m in movies:
+                    writer.writerow([m.get('id'), m.get('title'), m.get('genre'), m.get('duration'), m.get('showtimes'), m.get('screen')])
+
+            messagebox.showinfo('Exported', f'Movie list exported to {file_path}')
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to export CSV: {e}')
+   

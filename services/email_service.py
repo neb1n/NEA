@@ -7,14 +7,11 @@ import os
 class EmailService:
     def __init__(self):
         #!SMTP server configuration
-
-        #!Still need to fix this and set the .env file properly because I'm lowkey not working properly.
-
         
         self.smtp_server = "smtp.gmail.com"
         self.smtp_port = 587
         self.sender_email = "sanjeetrashad@gmail.com"
-        self.sender_password = "app_password"
+        self.sender_password = "etwv tkmj hhri asoi"
     
     def send_confirmation_email(self, recipient_email: str, reservation_details: dict) -> bool:
         try:

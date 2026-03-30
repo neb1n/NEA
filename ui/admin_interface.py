@@ -116,19 +116,47 @@ class AdminInterface:
         self.movie_tree.bind('<<TreeviewSelect>>', self.on_movie_select)
     
     def setup_reports_tab(self):
-        # Stats frame
-        stats_frame = ttk.LabelFrame(self.reports_frame, text="Statistics", padding="10")
-        stats_frame.pack(fill=tk.X, padx=10, pady=10)
-        
-        self.stats_text = tk.Text(stats_frame, height=10, width=80)
+        # Layout: left = movies & showtimes, right = report text
+        container = ttk.Frame(self.reports_frame)
+        container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+        left_frame = ttk.LabelFrame(container, text="Movies / Viewings", padding="6")
+        left_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 10))
+
+        right_frame = ttk.LabelFrame(container, text="Report", padding="6")
+        right_frame.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+        # Movie treeview on left
+        columns = ('ID', 'Title', 'Screen')
+        self.movie_tree_reports = ttk.Treeview(left_frame, columns=columns, show='headings', height=10)
+        for col in columns:
+            self.movie_tree_reports.heading(col, text=col)
+            self.movie_tree_reports.column(col, width=120)
+        self.movie_tree_reports.pack(fill=tk.Y, expand=True)
+        self.movie_tree_reports.bind('<<TreeviewSelect>>', self.on_reports_movie_select)
+
+        # Showtimes selector and buttons
+        controls_frame = ttk.Frame(left_frame)
+        controls_frame.pack(fill=tk.X, pady=(8, 0))
+
+        ttk.Label(controls_frame, text="Showtime:").grid(row=0, column=0, sticky='w')
+        self.showtime_var = tk.StringVar()
+        self.showtime_combo = ttk.Combobox(controls_frame, textvariable=self.showtime_var, values=[], width=20)
+        self.showtime_combo.grid(row=0, column=1, padx=(6, 0))
+
+        ttk.Button(controls_frame, text="View Movie Report", command=self.view_movie_report).grid(row=1, column=0, columnspan=2, pady=(8, 0), sticky='ew')
+        ttk.Button(controls_frame, text="View Viewing Report", command=self.view_viewing_report).grid(row=2, column=0, columnspan=2, pady=(6, 0), sticky='ew')
+
+        # Right: text area for report details
+        self.stats_text = tk.Text(right_frame, height=20)
         self.stats_text.pack(fill=tk.BOTH, expand=True)
-        
-        # Buttons
-        button_frame = ttk.Frame(self.reports_frame)
-        button_frame.pack(pady=10)
-        
-        ttk.Button(button_frame, text="Refresh Stats", command=self.refresh_stats).pack(side=tk.LEFT, padx=(0, 10))
-        ttk.Button(button_frame, text="Export to CSV", command=self.export_to_csv).pack(side=tk.LEFT)
+
+        # Footer buttons
+        footer_frame = ttk.Frame(self.reports_frame)
+        footer_frame.pack(pady=10)
+
+        ttk.Button(footer_frame, text="Refresh Stats", command=self.refresh_stats).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(footer_frame, text="Export to CSV", command=self.export_to_csv).pack(side=tk.LEFT)
     
     def setup_reservations_tab(self):
         # Reservations list
@@ -199,6 +227,11 @@ class AdminInterface:
         self.load_movies()
         self.load_reservations()
         self.refresh_stats()
+        # Also populate the reports movies list
+        try:
+            self.load_reports_movies()
+        except Exception:
+            pass
     
     def load_movies(self):
         for item in self.movie_tree.get_children():
@@ -390,4 +423,94 @@ class AdminInterface:
             messagebox.showinfo('Exported', f'Movie list exported to {file_path}')
         except Exception as e:
             messagebox.showerror('Error', f'Failed to export CSV: {e}')
+   
+    # --- Reports helpers ---
+    def load_reports_movies(self):
+        # populate the left movie tree in reports tab
+        for item in getattr(self, 'movie_tree_reports').get_children():
+            self.movie_tree_reports.delete(item)
+
+        movies = self.movie_service.get_all_movies()
+        for movie in movies:
+            self.movie_tree_reports.insert('', 'end', values=(movie.get('id'), movie.get('title'), movie.get('screen')))
+
+    def on_reports_movie_select(self, event):
+        selection = self.movie_tree_reports.selection()
+        if not selection:
+            return
+
+        item = self.movie_tree_reports.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            return
+
+        movie_title = values[1]
+        # populate showtimes combo
+        showtimes = self.movie_service.get_showtimes_for_movie(movie_title)
+        self.showtime_combo['values'] = showtimes
+        if showtimes:
+            self.showtime_var.set(showtimes[0])
+        else:
+            self.showtime_var.set('')
+
+    def view_movie_report(self):
+        selection = self.movie_tree_reports.selection()
+        if not selection:
+            messagebox.showerror('Error', 'Please select a movie to view report.')
+            return
+
+        item = self.movie_tree_reports.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            messagebox.showerror('Error', 'Could not determine selected movie.')
+            return
+
+        movie_title = values[1]
+        try:
+            report = self.reservation_service.get_movie_report(movie_title)
+            self.stats_text.delete('1.0', tk.END)
+            self.stats_text.insert(tk.END, f"Report for '{movie_title}'\n")
+            self.stats_text.insert(tk.END, f"Total Reservations: {report['total_reservations']}\n")
+            self.stats_text.insert(tk.END, f"Total Revenue: ${report['total_revenue']:.2f}\n\n")
+            self.stats_text.insert(tk.END, "Showtime Breakdown:\n")
+            if report['showtime_stats']:
+                for st, sdata in report['showtime_stats'].items():
+                    self.stats_text.insert(tk.END, f"  {st}: {sdata['count']} bookings, ${sdata['revenue']:.2f}\n")
+            else:
+                self.stats_text.insert(tk.END, "  No bookings for this movie.\n")
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to get movie report: {e}')
+
+    def view_viewing_report(self):
+        selection = self.movie_tree_reports.selection()
+        if not selection:
+            messagebox.showerror('Error', 'Please select a movie and showtime to view viewing report.')
+            return
+
+        item = self.movie_tree_reports.item(selection[0])
+        values = item.get('values', [])
+        if not values:
+            messagebox.showerror('Error', 'Could not determine selected movie.')
+            return
+
+        movie_title = values[1]
+        screen = values[2]
+        showtime = self.showtime_var.get()
+        if not showtime:
+            messagebox.showerror('Error', 'Please select a showtime.')
+            return
+
+        try:
+            report = self.reservation_service.get_viewing_report(movie_title, showtime, int(screen))
+            self.stats_text.delete('1.0', tk.END)
+            self.stats_text.insert(tk.END, f"Viewing Report for '{movie_title}' — {showtime} (Screen {screen})\n")
+            self.stats_text.insert(tk.END, f"Total Reservations: {report['total_reservations']}\n")
+            self.stats_text.insert(tk.END, f"Total Revenue: ${report['total_revenue']:.2f}\n\n")
+            self.stats_text.insert(tk.END, "Seats Booked:\n")
+            if report['seats']:
+                self.stats_text.insert(tk.END, ', '.join(report['seats']) + '\n')
+            else:
+                self.stats_text.insert(tk.END, '  No seats booked for this viewing.\n')
+        except Exception as e:
+            messagebox.showerror('Error', f'Failed to get viewing report: {e}')
    

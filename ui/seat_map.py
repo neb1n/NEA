@@ -51,20 +51,22 @@ class SeatMap:
             # Left block (seats 1-3)
             for col in range(1, 4):
                 seat_id = f"{row}{col}"
-                btn = tk.Button(
-                    row_frame, 
-                    text=seat_id, 
-                    width=5, 
+                btn = tk.Label(
+                    row_frame,
+                    text=seat_id,
+                    width=5,
                     height=2,
                     font=("Arial", 7, "bold"),
                     bg=Colors.AVAILABLE,
                     fg=Colors.TEXT,
-                    activebackground=Colors.ACCENT,
-                    activeforeground=Colors.CTA_FG,
-                    relief="raised", 
+                    relief="raised",
                     bd=2,
-                    command=lambda s=seat_id: self.toggle_seat(s)
+                    cursor="hand2",
                 )
+                # Bind click and hover; use lambda capturing seat_id
+                btn.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
+                btn.bind("<Enter>", lambda e: e.widget.config(highlightthickness=2, highlightbackground=Colors.ACCENT_HOVER))
+                btn.bind("<Leave>", lambda e: e.widget.config(highlightthickness=0))
                 btn.pack(side=tk.LEFT, padx=2)
                 self.seat_buttons[seat_id] = btn
             
@@ -75,20 +77,21 @@ class SeatMap:
             # Right block (seats 4-8)
             for col in range(4, 9):
                 seat_id = f"{row}{col}"
-                btn = tk.Button(
-                    row_frame, 
-                    text=seat_id, 
-                    width=5, 
+                btn = tk.Label(
+                    row_frame,
+                    text=seat_id,
+                    width=5,
                     height=2,
                     font=("Arial", 7, "bold"),
                     bg=Colors.AVAILABLE,
                     fg=Colors.TEXT,
-                    activebackground=Colors.ACCENT,
-                    activeforeground=Colors.CTA_FG,
-                    relief="raised", 
+                    relief="raised",
                     bd=2,
-                    command=lambda s=seat_id: self.toggle_seat(s)
+                    cursor="hand2",
                 )
+                btn.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
+                btn.bind("<Enter>", lambda e: e.widget.config(highlightthickness=2, highlightbackground=Colors.ACCENT_HOVER))
+                btn.bind("<Leave>", lambda e: e.widget.config(highlightthickness=0))
                 btn.pack(side=tk.LEFT, padx=2)
                 self.seat_buttons[seat_id] = btn
         
@@ -135,14 +138,42 @@ class SeatMap:
     def update_seat_colours(self):
         """Update all seat button colors based on current state"""
         for seat_id, button in self.seat_buttons.items():
+            # Reserved seats: show reserved colour and disable clicking (unbind)
             if seat_id in self.reserved_seats:
-                button.config(bg=Colors.RESERVED, fg=Colors.CTA_FG, state="disabled", activebackground=Colors.RESERVED, activeforeground=Colors.CTA_FG, relief="raised")
+                button.config(bg=Colors.RESERVED, fg=Colors.CTA_FG, relief="raised")
+                try:
+                    button.unbind("<Button-1>")
+                    button.config(cursor="")
+                except Exception:
+                    pass
+            # Selected seats: sunken look
             elif seat_id in self.selected_seats:
-                button.config(bg=Colors.SELECTED, fg=Colors.TEXT, state="normal", activebackground=Colors.SELECTED, activeforeground=Colors.TEXT, relief="sunken")
+                button.config(bg=Colors.SELECTED, fg=Colors.TEXT, relief="sunken")
+                # ensure clickable
+                try:
+                    button.unbind("<Button-1>")
+                    button.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
+                    button.config(cursor="hand2")
+                except Exception:
+                    pass
+            # Premium seats: special colour but selectable
             elif seat_id in self.premium_seats:
-                button.config(bg=Colors.PREMIUM, fg=Colors.TEXT, state="normal", activebackground=Colors.PREMIUM, activeforeground=Colors.TEXT, relief="raised")
+                button.config(bg=Colors.PREMIUM, fg=Colors.TEXT, relief="raised")
+                try:
+                    button.unbind("<Button-1>")
+                    button.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
+                    button.config(cursor="hand2")
+                except Exception:
+                    pass
+            # Available seats
             else:
-                button.config(bg=Colors.AVAILABLE, fg=Colors.TEXT, state="normal", activebackground=Colors.AVAILABLE, activeforeground=Colors.TEXT, relief="raised")
+                button.config(bg=Colors.AVAILABLE, fg=Colors.TEXT, relief="raised")
+                try:
+                    button.unbind("<Button-1>")
+                    button.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
+                    button.config(cursor="hand2")
+                except Exception:
+                    pass
             # ensure widget is redrawn
             try:
                 button.update_idletasks()

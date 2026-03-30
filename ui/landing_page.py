@@ -120,7 +120,7 @@ class LandingPage:
     def create_movie_card(self, parent, movie, row, col):
         # Movie card frame
         card_frame = tk.Frame(parent, bg=Colors.CARD_BG, relief="raised", borderwidth=1, height=300, width=250)
-        card_frame.grid(row=row, column=col, padx=15, pady=15, sticky="ew")
+        card_frame.grid(row=row, column=col, padx=15, pady=10, sticky="ew")
         card_frame.pack_propagate(False)
         
         # Movie poster placeholder
@@ -149,17 +149,39 @@ class LandingPage:
                                bg=Colors.CARD_BG, fg=Colors.ACCENT)
         screen_label.pack(padx=10, pady=(2, 8))
         
-        # Reserve button — ensure readability on the soft background
-        reserve_btn = tk.Button(
-            card_frame,
-            text="Reserve Now",
-            font=("Segoe UI", 10, "bold"),
-            bg=Colors.ACCENT,
-            fg=Colors.CTA_FG,
-            activebackground=Colors.ACCENT_HOVER,
-            activeforeground=Colors.CTA_FG,
-            relief="flat",
-            cursor="hand2",
-            command=lambda m=movie: self.on_reserve_click(m)
-        )
-        reserve_btn.pack(fill=tk.X, padx=10, pady=(0, 10))
+        # Make the whole card act as a clickable button (card = button)
+        # set a pointer cursor for affordance
+        try:
+            card_frame.config(cursor="hand2")
+        except Exception:
+            pass
+
+        # Hover effect: show a subtle highlight around the card
+        def _on_enter(e):
+            try:
+                card_frame.config(highlightbackground=Colors.ACCENT_HOVER, highlightthickness=2)
+            except Exception:
+                pass
+
+        def _on_leave(e):
+            try:
+                card_frame.config(highlightthickness=0)
+            except Exception:
+                pass
+
+        def _on_click(e, m=movie):
+            try:
+                self.on_reserve_click(m)
+            except Exception:
+                pass
+
+        # Bind the frame and its main children so clicks anywhere register
+        widgets_to_bind = [card_frame, poster_frame, poster_label, title_label, info_label, screen_label]
+        for w in widgets_to_bind:
+            try:
+                w.bind("<Enter>", _on_enter)
+                w.bind("<Leave>", _on_leave)
+                w.bind("<Button-1>", _on_click)
+                w.config(cursor="hand2")
+            except Exception:
+                pass

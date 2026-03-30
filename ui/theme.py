@@ -2,7 +2,7 @@ class Colors:
     # Overall background and surfaces
     BACKGROUND = "#f6f7fb"      # very light neutral
     CARD_BG = "#f8fbff"         # soft card background
-    HEADER_BG = "#eef4ff"       # soft header band
+    HEADER_BG = "#1b3b76"       # soft header band
     MUTED = "#6b6f7a"           # muted text
     TEXT = "#2b2b3a"            # primary text (dark, soft)
 
@@ -18,4 +18,4 @@ class Colors:
     PREMIUM = "#ffe9b3"         # soft amber (premium)
 
     # Legend / borders
-    LEGEND_BORDER = "#e6edf7"
+    LEGEND_BORDER = "#000000"

@@ -134,3 +134,50 @@ class ReservationService:
             'total_revenue': total_revenue,
             'screen_stats': screen_stats
         }
+
+    def get_movie_report(self, movie_title: str) -> Dict[str, Any]:
+        """Return summary report for a given movie across all showtimes/screens.
+
+        Result contains total reservations, total revenue, and a mapping of showtime -> stats.
+        """
+        reservations = [r for r in self.get_all_reservations() if r['movie_title'] == movie_title]
+
+        total_reservations = len(reservations)
+        total_revenue = sum(r['total_price'] for r in reservations)
+
+        showtime_stats = {}
+        for r in reservations:
+            key = f"{r.get('showtime')} (Screen {r.get('screen')})"
+            if key not in showtime_stats:
+                showtime_stats[key] = {'count': 0, 'revenue': 0.0}
+            showtime_stats[key]['count'] += 1
+            showtime_stats[key]['revenue'] += float(r.get('total_price', 0.0))
+
+        return {
+            'movie_title': movie_title,
+            'total_reservations': total_reservations,
+            'total_revenue': total_revenue,
+            'showtime_stats': showtime_stats,
+            'reservations': reservations
+        }
+
+    def get_viewing_report(self, movie_title: str, showtime: str, screen: int) -> Dict[str, Any]:
+        """Return report for a specific viewing (movie + showtime + screen)."""
+        reservations = [r for r in self.get_all_reservations() if r['movie_title'] == movie_title and r['showtime'] == showtime and r['screen'] == screen]
+
+        total_reservations = len(reservations)
+        total_revenue = sum(r['total_price'] for r in reservations)
+
+        seats = []
+        for r in reservations:
+            seats.extend([s.strip() for s in r.get('seat_numbers', '').split(',') if s.strip()])
+
+        return {
+            'movie_title': movie_title,
+            'showtime': showtime,
+            'screen': screen,
+            'total_reservations': total_reservations,
+            'total_revenue': total_revenue,
+            'seats': seats,
+            'reservations': reservations
+        }

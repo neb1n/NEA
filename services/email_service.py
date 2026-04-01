@@ -25,21 +25,20 @@ class EmailService:
             body = f"""
             Dear {reservation_details['customer_name']},
             
-            Your movie reservation has been confirmed!
+            Thank you for booking!
             
             Reservation Details:
             - Movie: {reservation_details['movie_title']}
             - Showtime: {reservation_details['showtime']}
             - Screen: {reservation_details['screen']}
             - Seats: {reservation_details['seat_numbers']}
-            - Total Price: ${reservation_details['total_price']:.2f}
-            
-            Please arrive 15 minutes before showtime.
-            
+            - Total Price: {reservation_details['total_price']:.2f}
+
             Thank you for choosing our theater!
             
             Best regards,
             Movie Theater Management
+            Sanjeet Rashad
             """
             
             message.attach(MIMEText(body, "plain"))

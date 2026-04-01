@@ -7,6 +7,7 @@ class LoginWindow:
     def __init__(self, parent, on_login_success):
         self.parent = parent
         self.on_login_success = on_login_success
+        #!Calling the authentication service
         self.auth_service = AuthService()
         
         #!Creating the window
@@ -16,7 +17,6 @@ class LoginWindow:
         self.window.resizable(False, False)
         self.window.transient(parent)
         self.window.grab_set()
-        # soft background
         self.window.configure(bg=Colors.BACKGROUND)
         
         self.setup_ui()

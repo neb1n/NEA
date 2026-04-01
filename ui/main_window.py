@@ -4,7 +4,6 @@ from ui.user_interface import UserInterface
 from ui.admin_interface import AdminInterface
 from ui.login_window import LoginWindow
 from ui.theme import Colors
-from ui.splash_screen import SplashScreen
 
 class MainWindow:
     def __init__(self, root):
@@ -12,7 +11,7 @@ class MainWindow:
         self.root.title("Movie Theater Reservation System")
         self.root.geometry("1200x800")
         self.root.minsize(1000, 700)
-        # Soft background from theme
+        #!Background from theme
         self.root.configure(bg=Colors.BACKGROUND)
 
         self.current_interface = None
@@ -22,19 +21,19 @@ class MainWindow:
         self.show_user_interface()
 
     def setup_ui(self):
-        # Main container with styled background
+        #!Main container
         style = ttk.Style()
         style.configure("Main.TFrame", background=Colors.BACKGROUND)
         self.main_container = ttk.Frame(self.root, style="Main.TFrame")
         self.main_container.pack(fill=tk.BOTH, expand=True)
 
-        # Remove menu bar for a cleaner look
-        self.root.config(menu=tk.Menu(self.root))  # Empty menu
-
+        #!Sets empty menu
+        self.root.config(menu=tk.Menu(self.root))
+        #!Clears the menu
     def clear_container(self):
         for widget in self.main_container.winfo_children():
             widget.destroy()
-
+        #!Pulls user interface
     def show_user_interface(self):
         self.clear_container()
         self.current_interface = UserInterface(self.main_container, self.show_admin_login)
@@ -43,32 +42,24 @@ class MainWindow:
     def show_admin_login(self):
         LoginWindow(self.root, self.on_admin_login_success)
 
-    def on_admin_login_success(self, auth_service):
-        splash_words = [
-            "Waiting for Database...",
-            "Loading Admin Panel...",
-            "Loading Database...",
-        ]
-        SplashScreen(self.root, words=splash_words, duration=3000, on_close=lambda: self._finalize_admin_login(auth_service))
-
     def _finalize_admin_login(self, auth_service):
         self.auth_service = auth_service
         try:
             self.show_admin_interface()
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open admin interface: {e}")
-            # Fallback: return to user interface so the app remains usable
+            #!Exception handling
             self.show_user_interface()
 
     def show_admin_interface(self):
         if not self.auth_service or not self.auth_service.is_authenticated():
             self.show_admin_login()
             return
-
+        #!Runs the admin interface together
         self.clear_container()
         self.current_interface = AdminInterface(self.main_container, self.auth_service, logout_callback=self.logout_admin)
         self.root.title("Movie Theater Reservation System - Admin Panel")
-
+    #!Logging out
     def logout_admin(self):
         if self.auth_service:
             self.auth_service.logout()

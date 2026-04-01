@@ -90,7 +90,7 @@ class ReservationService:
             f.write(f"Showtime: {receipt_data['showtime']}\n") #!Showtime
             f.write(f"Screen: {receipt_data['screen']}\n") #!Screen
             f.write(f"Seats: {receipt_data['seat_numbers']}\n\n") #!Seats
-            f.write(f"Total Price: ${receipt_data['total_price']:.2f}\n") #!Total price
+            f.write(f"Total Price: {receipt_data['total_price']:.2f}\n") #!Total price
             f.write("\n" + "=" * 50 + "\n") #!Aesthetic
             f.write("Thank you for choosing our theater!\n")
             f.write("=" * 50 + "\n") #!Aesthetic
@@ -136,15 +136,13 @@ class ReservationService:
         }
 
     def get_movie_report(self, movie_title: str) -> Dict[str, Any]:
-        """Return summary report for a given movie across all showtimes/screens.
-
-        Result contains total reservations, total revenue, and a mapping of showtime -> stats.
-        """
+        #!Returns all database information based on the movie including all screenings
         reservations = [r for r in self.get_all_reservations() if r['movie_title'] == movie_title]
 
         total_reservations = len(reservations)
         total_revenue = sum(r['total_price'] for r in reservations)
 
+        #!Checking showtime stats and adding over to the total price
         showtime_stats = {}
         for r in reservations:
             key = f"{r.get('showtime')} (Screen {r.get('screen')})"
@@ -152,7 +150,7 @@ class ReservationService:
                 showtime_stats[key] = {'count': 0, 'revenue': 0.0}
             showtime_stats[key]['count'] += 1
             showtime_stats[key]['revenue'] += float(r.get('total_price', 0.0))
-
+        #!Return clauses
         return {
             'movie_title': movie_title,
             'total_reservations': total_reservations,
@@ -162,16 +160,16 @@ class ReservationService:
         }
 
     def get_viewing_report(self, movie_title: str, showtime: str, screen: int) -> Dict[str, Any]:
-        """Return report for a specific viewing (movie + showtime + screen)."""
+        #!Returning the reports for a specific screening
         reservations = [r for r in self.get_all_reservations() if r['movie_title'] == movie_title and r['showtime'] == showtime and r['screen'] == screen]
 
         total_reservations = len(reservations)
         total_revenue = sum(r['total_price'] for r in reservations)
-
+        #!Returns which seats are booked not observable per movie as there would be repeating seats
         seats = []
         for r in reservations:
             seats.extend([s.strip() for s in r.get('seat_numbers', '').split(',') if s.strip()])
-
+        #!Return clause
         return {
             'movie_title': movie_title,
             'showtime': showtime,

@@ -4,8 +4,8 @@ class AuthService:
     def __init__(self, login_file: str = "logins.txt"):
         self.login_file = login_file
         self.current_user: Optional[Dict[str, Any]] = None
-
-    def login(self, username: str, password: str) -> bool: #!Worth it to make this so much more complicated than it actually needs to be.
+        #!Tries login and returns the username and password checking as a boolean
+    def login(self, username: str, password: str) -> bool: 
         try:
             with open(self.login_file, "r") as f:
                 for line in f:
@@ -19,15 +19,16 @@ class AuthService:
                     if username == file_username and password == file_password:
                         self.current_user = {"username": username, "role": file_role}
                         return True
+        #!Exception handling
         except FileNotFoundError:
             pass
         return False
-
+    #!Sets user as none to logout
     def logout(self):
         self.current_user = None
-
+    #!Self authentication
     def is_authenticated(self) -> bool:
         return self.current_user is not None
-
+    #!Function user verifying
     def get_current_user(self) -> Optional[Dict[str, Any]]:
         return self.current_user

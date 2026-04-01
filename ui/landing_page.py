@@ -13,7 +13,7 @@ class LandingPage:
         self.setup_styles()
         self.setup_ui()
         self.load_featured_movies()
-    
+    #!Styling setup allows for easier refrencing later down
     def setup_styles(self):
         style = ttk.Style()
         style.theme_use("clam")
@@ -26,11 +26,11 @@ class LandingPage:
         style.configure("ReserveBtn.TButton", font=("Segoe UI", 11, "bold"), foreground=Colors.CTA_FG, background=Colors.ACCENT)
     
     def setup_ui(self):
-        # Main frame with soft background
+        #!Main frame 
         self.main_frame = ttk.Frame(self.parent, style="Landing.TFrame")
         self.main_frame.pack(fill=tk.BOTH, expand=True)
         
-        # Header bar container
+        #!Header bar container
         header_frame = ttk.Frame(self.main_frame, style="Landing.TFrame")
         header_frame.pack(fill=tk.X, padx=0, pady=0)
         
@@ -38,17 +38,17 @@ class LandingPage:
         header_bg.pack(fill=tk.X, padx=0)
         header_bg.pack_propagate(False)
 
-        # Centered title using place; admin button stays at the right
-        title_label = tk.Label(header_bg, text="🎬 NUTWARK Cinema", font=("Segoe UI", 28, "bold"),
+        #!Centered title using place and admin button stays at the right
+        title_label = tk.Label(header_bg, text="NUTWARK Cinema", font=("Segoe UI", 28, "bold"),
                                bg=Colors.HEADER_BG, fg=Colors.ACCENT)
-        # center the label in the header band
+        #!Label stays centered in the header band
         title_label.place(relx=0.5, rely=0.5, anchor="center")
 
-        # Admin button: styled tk.Button with hover effect (more sophisticated)
+        #!Admin buttons styled with the float effect to give it some kind of depth
         if self.admin_login_callback:
             admin_btn = tk.Button(
                 header_bg,
-                text="🔒 Admin",
+                text="Admin",
                 font=("Segoe UI", 10, "bold"),
                 bg=Colors.CARD_BG,
                 fg=Colors.TEXT,
@@ -59,10 +59,10 @@ class LandingPage:
                 cursor="hand2",
                 command=self.admin_login_callback
             )
-            # place on the right side
+            #!Place on the right side
             admin_btn.pack(side=tk.RIGHT, padx=24, pady=20)
 
-            # subtle hover effect
+            #!Hover effect
             def on_enter(e):
                 try:
                     admin_btn.config(bg=Colors.ACCENT_HOVER, fg=Colors.CTA_FG)
@@ -76,14 +76,14 @@ class LandingPage:
             admin_btn.bind("<Enter>", on_enter)
             admin_btn.bind("<Leave>", on_leave)
         
-        # Tagline (soft muted)
+        #!Tagline that i was recommended to add
         tagline = tk.Label(self.main_frame, text="NOW SHOWING - Book Your Experience Today", 
                           font=("Segoe UI", 14), bg=Colors.BACKGROUND, fg=Colors.MUTED)
         tagline.pack(pady=(20, 10))
         
-        # Scrollable movies container
+        #!Scrollable movies
         canvas_frame = ttk.Frame(self.main_frame, style="Landing.TFrame")
-        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        canvas_frame.pack(fill=tk.BOTH, expand=True, padx=40, pady=20)
         
         canvas = tk.Canvas(canvas_frame, bg=Colors.BACKGROUND, highlightthickness=0)
         scrollbar = ttk.Scrollbar(canvas_frame, orient="vertical", command=canvas.yview)
@@ -111,52 +111,51 @@ class LandingPage:
             no_movies_label.pack(pady=40)
             return
         
-        # Create grid of movie cards (3 columns)
+        #!Create grid of movie cards
         for idx, movie in enumerate(movies):
-            row = idx // 3
+            row = idx // 4
             col = idx % 3
             self.create_movie_card(self.movies_container, movie, row, col)
     
     def create_movie_card(self, parent, movie, row, col):
-        # Movie card frame
+        #!Movie card frame
         card_frame = tk.Frame(parent, bg=Colors.CARD_BG, relief="raised", borderwidth=1, height=300, width=250)
         card_frame.grid(row=row, column=col, padx=15, pady=10, sticky="ew")
         card_frame.pack_propagate(False)
         
-        # Movie poster placeholder
+        #!Movie permanent frame and poster
         poster_frame = tk.Frame(card_frame, bg=Colors.HEADER_BG, height=180)
         poster_frame.pack(fill=tk.X, padx=10, pady=(10, 0))
         poster_frame.pack_propagate(False)
         
-        # Use emoji or text as placeholder
+        #!Emojis instead of poster
         poster_label = tk.Label(poster_frame, text="🎭", font=("Segoe UI", 60), 
                                bg=Colors.HEADER_BG, fg=Colors.ACCENT)
         poster_label.pack(expand=True)
         
-        # Movie title
+        #!Movie title
         title_label = tk.Label(card_frame, text=movie['title'], font=("Segoe UI", 11, "bold"),
                               bg=Colors.CARD_BG, fg=Colors.TEXT, wraplength=230, justify="center")
         title_label.pack(padx=10, pady=(10, 5))
         
-        # Genre & Duration
+        #!Genre and Duration
         info_text = f"{movie['genre']} • {movie['duration']} min"
         info_label = tk.Label(card_frame, text=info_text, font=("Segoe UI", 9),
                              bg=Colors.CARD_BG, fg=Colors.MUTED)
         info_label.pack(padx=10, pady=2)
         
-        # Screen info
+        #!Screen info
         screen_label = tk.Label(card_frame, text=f"Screen {movie['screen']}", font=("Segoe UI", 9),
                                bg=Colors.CARD_BG, fg=Colors.ACCENT)
         screen_label.pack(padx=10, pady=(2, 8))
         
-        # Make the whole card act as a clickable button (card = button)
-        # set a pointer cursor for affordance
+        #!Makes the whole card act as a clickable button
         try:
             card_frame.config(cursor="hand2")
         except Exception:
             pass
 
-        # Hover effect: show a subtle highlight around the card
+        #!Hover effect
         def _on_enter(e):
             try:
                 card_frame.config(highlightbackground=Colors.ACCENT_HOVER, highlightthickness=2)
@@ -175,7 +174,7 @@ class LandingPage:
             except Exception:
                 pass
 
-        # Bind the frame and its main children so clicks anywhere register
+        #!Bind the frame and its subframes so clicks anywhere register
         widgets_to_bind = [card_frame, poster_frame, poster_label, title_label, info_label, screen_label]
         for w in widgets_to_bind:
             try:

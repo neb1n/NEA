@@ -42,6 +42,9 @@ class MainWindow:
     def show_admin_login(self):
         LoginWindow(self.root, self.on_admin_login_success)
 
+    def on_admin_login_success(self, auth_service):
+        self._finalize_admin_login(auth_service)
+
     def _finalize_admin_login(self, auth_service):
         self.auth_service = auth_service
         try:

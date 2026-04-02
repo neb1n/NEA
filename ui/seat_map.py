@@ -148,7 +148,7 @@ class SeatMap:
                     pass
             #!Selected Seats
             elif seat_id in self.selected_seats:
-                button.config(bg=Colors.SELECTED, fg=Colors.TEXT, relief="sunken"
+                button.config(bg=Colors.SELECTED, fg=Colors.TEXT, relief="sunken")
                 try:
                     button.unbind("<Button-1>")
                     button.bind("<Button-1>", lambda e, s=seat_id: self.toggle_seat(s))
